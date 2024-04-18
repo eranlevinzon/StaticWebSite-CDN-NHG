@@ -1,0 +1,39 @@
+trigger:
+- Dev
+
+stages:
+- stage: Dev
+  jobs:
+  - template: pipeline-templates/azure-deploy-template.yaml
+    parameters:
+      environmentName: 'Dev'
+      azureSubscription: 'svc-sp-staticweb-dev'
+      resourceGroupName: 'staticweb-sp-dev-uks-dev-rg'
+      bicepTemplatePath: '$(Build.SourcesDirectory)/Bicep/main.bicep'
+      parameterFilePath: '$(Build.SourcesDirectory)/Bicep/dev.parameters.json'
+      variableGroup: 'static-website-variable-group-dev'
+      
+- stage: Stage
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main')) 
+  jobs:
+  - template: pipeline-templates/azure-deploy-template.yaml
+    parameters:
+      environmentName: 'Stage'
+      azureSubscription: 'svc-sp-staticweb-stage'
+      resourceGroupName: 'staticweb-sp-stage-uks-stage-rg'
+      bicepTemplatePath: '$(Build.SourcesDirectory)/Bicep/main.bicep'
+      parameterFilePath: '$(Build.SourcesDirectory)/Bicep/stage.parameters.json'
+      variableGroup: 'static-website-variable-group-stage'
+
+- stage: Prod
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/tags/')) # deploy from tagged branch only
+  jobs:
+  - template: pipeline-templates/azure-deploy-template.yaml
+    parameters:
+      environmentName: 'Prod'
+      azureSubscription: 'svc-sp-staticweb-prod'
+      resourceGroupName: 'staticweb-sp-prod-uks-prod-rg'
+      bicepTemplatePath: '$(Build.SourcesDirectory)/Bicep/main.bicep'
+      parameterFilePath: '$(Build.SourcesDirectory)/Bicep/prod.parameters.json'
+      variableGroup: 'static-website-variable-group-prod'
+
